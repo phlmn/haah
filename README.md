@@ -42,7 +42,7 @@ mqttSensor('zigbee2mqtt/some_switch', (payload) =>
 mqttActuator('zigbee2mqtt/some_lamp/set', () => {
 //            ^ this is the mqtt topic of the lamp
 
-  if (!jarosRoom.lightOn) {
+  if (!lampState.lightOn) {
     // the return value is published into the mqtt topic of this actuator
     return { state: 'off', brightness: 0, transition: 0 };
   } else {
