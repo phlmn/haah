@@ -1,0 +1,21 @@
+{
+  "name": "haah-example",
+  "version": "0.1.0",
+  "description": "An example how to use HAAH",
+  "scripts": {
+    "start": "ts-node index.ts"
+  },
+  "license": "AGPL-3.0-only",
+  "dependencies": {
+    "antd": "^4.15.4",
+    "haah": "file:..",
+    "react": "^17.0.2",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.4"
+  },
+  "devDependencies": {
+    "@types/antd": "^1.0.0",
+    "@types/react": "^17.0.5",
+    "prettier": "^2.2.1"
+  }
+}
