@@ -65,7 +65,7 @@ async function startServer(
 ) {
   const server = http.createServer((req, res) => {
     const prepare = (res: ServerResponse) => {
-      res.setHeader('Content-Type', `${mime.lookup(req.url)}; charset=utf-8`);
+      res.setHeader('Content-Type', `${mime.getType(req.url)}; charset=utf-8`);
       res.writeHead(200);
     };
     const inMemoryFile = buildResult.find((f) => f.path == req.url);

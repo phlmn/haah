@@ -7,7 +7,6 @@
   },
   "license": "AGPL-3.0-only",
   "dependencies": {
-    "@types/antd": "^1.0.0",
     "@types/node": "^15.3.0",
     "@types/react": "^17.0.5",
     "antd": "^4.15.4",
