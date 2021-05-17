@@ -1,4 +1,4 @@
-export default function timeSensor(
+export function timeSensor(
   handler: (time: Date) => void,
   refreshInterval = 1000,
 ) {

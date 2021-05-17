@@ -1,23 +1,27 @@
 import { state, updateState, mqttActuator, mqttSensor, webuiWidget } from 'haah';
 import { interpolate } from '../../util/interpolate';
 
-import React from 'react';
-import { Switch, Slider } from 'antd';
+import React  from 'react';
+import { Slider, Form } from 'antd';
+import { LabeledSwitch } from '../../util/frontend';
 
 export const jarosRoom = state('jaro', {
   lightOn: false,
   comfort: 0.5,
 });
 
-webuiWidget('Jaros Light', jarosRoom, (jarosRoom) => {
-  return <>
-    <Switch checked={jarosRoom.lightOn} onChange={checked =>
-      updateState(jarosRoom, jarosRoom => { jarosRoom.lightOn = checked })
+
+webuiWidget('Jaros Light', () => {
+  return <Form layout='horizontal'>
+    <LabeledSwitch label={"ON"} checked={jarosRoom.lightOn} onChange={value =>
+      updateState(jarosRoom, (jarosRoom) => { jarosRoom.lightOn = value })
     }/>
-    <Slider  min={0} max={1} step={0.01} value={jarosRoom.comfort} onChange={(value: number) =>
-      updateState(jarosRoom, (jarosRoom) => { jarosRoom.comfort = value })
-    }/>
-  </>;
+    <Form.Item>
+      <Slider  min={0} max={1} step={0.01} value={jarosRoom.comfort} onChange={(value: number) =>
+        updateState(jarosRoom, (jarosRoom) => { jarosRoom.comfort = value })
+      }/>
+    </Form.Item>
+  </Form>;
 });
 
 
@@ -50,7 +54,7 @@ mqttSensor('zigbee2mqtt/jaro/switch', (payload) =>
 function jaroNormalLamp(
   min_brightness = 0,
   max_brightness = 254,
-  max_color_temp = 350,
+  min_color_temp = 250,
 ) {
   return () => {
     if (!jarosRoom.lightOn) {
@@ -62,8 +66,8 @@ function jaroNormalLamp(
       transition: 0,
       ...interpolate(
         jarosRoom.comfort,
-        { brightness: min_brightness, color_temp: 500 },
-        { brightness: max_brightness, color_temp: 350 },
+        { brightness: min_brightness, color_temp: 454 },
+        { brightness: max_brightness, color_temp: min_color_temp },
       ),
     };
   };

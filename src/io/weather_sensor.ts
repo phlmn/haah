@@ -64,7 +64,7 @@ export type WeatherInfo = {
   };
 };
 
-export default function weatherSensor(
+export function weatherSensor(
   darkSkyApiKey: string,
   lat: number,
   long: number,

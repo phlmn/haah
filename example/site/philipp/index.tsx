@@ -10,40 +10,40 @@ export const philippsRoom = state('philippsRoom', {
   deskPower: false,
 });
 
-webuiWidget('Philipps Room', philippsRoom, (state) => {
+webuiWidget('Philipps Room', () => {
   return (
     <>
       <Switch
-        checked={state.lightOn}
+        checked={philippsRoom.lightOn}
         onChange={(checked) =>
-          updateState(state, (state) => {
+          updateState(philippsRoom, (state) => {
             state.lightOn = checked;
           })
         }
       />
       <Switch
-        checked={state.productive}
+        checked={philippsRoom.productive}
         onChange={(checked) =>
-          updateState(state, (state) => {
+          updateState(philippsRoom, (state) => {
             state.productive = checked;
           })
         }
       />
       <Switch
-        checked={state.deskPower}
+        checked={philippsRoom.deskPower}
         onChange={(checked) =>
-          updateState(state, (state) => {
+          updateState(philippsRoom, (state) => {
             state.deskPower = checked;
           })
         }
       />
       <Slider
-        value={state.brightness}
+        value={philippsRoom.brightness}
         min={0}
         step={0.01}
         max={1.0}
         onChange={(brightness: number) =>
-          updateState(state, (state) => {
+          updateState(philippsRoom, (state) => {
             state.brightness = brightness;
           })
         }

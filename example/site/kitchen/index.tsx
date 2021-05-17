@@ -1,5 +1,5 @@
 import React from 'react';
-import { Switch } from 'antd';
+import { Form, Slider, Switch } from 'antd';
 
 import {
   mqttActuator,
@@ -9,23 +9,22 @@ import {
   webuiWidget,
 } from 'haah';
 
+import { LabeledSwitch } from '../../util/frontend';
+
 const kitchen = state('kitchen', {
   lightOn: false,
   cinema: false,
 });
 
-webuiWidget('Kitchen', kitchen, (state) => {
-  return (
-    <Switch
-      checked={state.lightOn}
-      onChange={(checked) =>
-        updateState(state, (state) => {
-          state.lightOn = checked;
-          state.cinema = false;
-        })
-      }
-    />
-  );
+webuiWidget('Kitchen', () => {
+  return <Form layout='horizontal'>
+    <LabeledSwitch label={"ON"} checked={kitchen.lightOn} onChange={value =>
+      updateState(kitchen, (kitchen) => { kitchen.lightOn = value })
+    }/>
+    <LabeledSwitch label={"CINEMA"} checked={kitchen.cinema} onChange={value =>
+      updateState(kitchen, (kitchen) => { kitchen.cinema = value })
+    }/>
+  </Form>;
 });
 
 mqttSensor('zigbee2mqtt/kitchen/switch', (payload) =>
