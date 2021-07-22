@@ -1,9 +1,9 @@
-import MQTT from 'async-mqtt';
+import MQTT, { IClientOptions } from 'async-mqtt';
 import { registerActuator } from '..';
 
 export let mqttClient: MQTT.AsyncClient = null;
-export async function initMqtt(brokerUri: string) {
-  mqttClient = await MQTT.connectAsync(brokerUri);
+export async function initMqtt(brokerUri: string, opts: IClientOptions = {}) {
+  mqttClient = await MQTT.connectAsync(brokerUri, opts);
 }
 
 export function mqttActuator(topic: string, fn: () => any) {
