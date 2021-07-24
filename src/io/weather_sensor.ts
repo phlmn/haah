@@ -1,150 +1,150 @@
 import fetch from 'isomorphic-fetch';
 
-const apiUrl = (apiKey: string, lat: number, long: number) =>
-  `https://api.darksky.net/forecast/${apiKey}/${lat},${long}?units=si`;
+const apiUrl = (apiKey: string, lat: number, lon: number) =>
+  `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&units=metric&exclude=minutely,hourly&appid=${apiKey}`;
 const INTERVAL = 1000 * 60 * 5;
 
 export type WeatherInfo = {
   current: {
     time: Date;
-    summary: string;
-    precipIntensity: number;
-    precipProbability: number;
-    precipType: string;
+    sunriseTime: Date;
+    sunsetTime: Date;
     temperature: number;
     apparentTemperature: number;
-    dewPoint: number;
-    humidity: number;
     pressure: number;
-    windSpeed: number;
-    windGust: number;
-    windBearing: number;
+    humidity: number;
+    dewPoint: number;
     cloudCover: number;
     uvIndex: number;
     visibility: number;
-    ozone: number;
+    windSpeed: number;
+    windGust: number;
+    windDegree: number
+    weather: {
+      id: number;
+      main: string;
+      description: string;
+      icon: string;
+    };
   };
   today: {
     time: Date;
-    summary: string;
     sunriseTime: Date;
     sunsetTime: Date;
+    moonriseTime: Date;
+    moonsetTime: Date;
     moonPhase: number;
-    precipIntensity: number;
-    precipIntensityMax: number;
-    precipIntensityMaxTime: number;
-    precipProbability: number;
-    precipAccumulation: number;
-    precipType: string;
-    temperatureHigh: number;
-    temperatureHighTime: Date;
-    temperatureLow: number;
-    temperatureLowTime: Date;
-    apparentTemperatureHigh: number;
-    apparentTemperatureHighTime: Date;
-    apparentTemperatureLow: number;
-    apparentTemperatureLowTime: Date;
-    dewPoint: number;
-    humidity: number;
+    temperature: {
+      morning: number;
+      day: number;
+      evening: number;
+      night: number;
+      min: number;
+      max: number;
+    };
+    apparentTemperature: {
+      morning: number;
+      day: number;
+      evening: number;
+      night: number;
+    };
     pressure: number;
-    windSpeed: number;
-    windBearing: number;
+    humidity: number;
+    dewPoint: number;
     cloudCover: number;
     uvIndex: number;
-    uvIndexTime: Date;
-    visibility: number;
-    temperatureMin: number;
-    temperatureMinTime: Date;
-    temperatureMax: number;
-    temperatureMaxTime: Date;
-    apparentTemperatureMin: number;
-    apparentTemperatureMinTime: Date;
-    apparentTemperatureMax: number;
-    apparentTemperatureMaxTime: Date;
+    windSpeed: number;
+    windGust: number;
+    windDegree: number
+    precipProbability: number;
+    rain: number;
+    snow: number;
+    weather: {
+      id: number;
+      main: string;
+      description: string;
+      icon: string;
+    };
   };
 };
 
 export function weatherSensor(
-  darkSkyApiKey: string,
+  openWeatherMapApiKey: string,
   lat: number,
-  long: number,
+  lon: number,
   handler: (weatherInfo: WeatherInfo) => void,
 ) {
   async function updateWeather() {
     try {
       console.info('Updating weather info.');
 
-      const res = await fetch(apiUrl(darkSkyApiKey, lat, long));
+      const res = await fetch(apiUrl(openWeatherMapApiKey, lat, lon));
       const parsedRes = await res.json();
-      const { currently } = parsedRes;
+      const { current } = parsedRes;
 
-      const today = parsedRes.daily.data[0];
+      const today = parsedRes.daily[0];
 
       handler({
         current: {
-          time: new Date(currently.time * 1000),
-          summary: currently.summary,
-          precipIntensity: currently.precipIntensity,
-          precipProbability: currently.precipProbability,
-          precipType: currently.precipType,
-          temperature: currently.temperature,
-          apparentTemperature: currently.apparentTemperature,
-          dewPoint: currently.dewPoint,
-          humidity: currently.humidity,
-          pressure: currently.pressure,
-          windSpeed: currently.windSpeed,
-          windGust: currently.windGust,
-          windBearing: currently.windBearing,
-          cloudCover: currently.cloudCover,
-          uvIndex: currently.uvIndex,
-          visibility: currently.visibility,
-          ozone: currently.ozone,
+          time: new Date(current.dt * 1000),
+          sunriseTime: new Date(current.sunrise * 1000),
+          sunsetTime: new Date(current.sunset * 1000),
+          temperature: current.temp,
+          apparentTemperature: current.feels_like,
+          pressure: current.pressure,
+          humidity: current.humidity,
+          dewPoint: current.dew_point,
+          cloudCover: current.clouds,
+          uvIndex: current.uvi,
+          visibility: current.visibility,
+          windSpeed: current.wind_speed,
+          windGust: current.wind_gust,
+          windDegree: current.wind_deg,
+          weather: {
+            id: current.weather.id,
+            main: current.weather.main,
+            description: current.weather.description,
+            icon: current.weather.icon,
+          },
         },
         today: {
-          time: new Date(today.time * 1000),
-          summary: today.summary,
-          sunriseTime: new Date(today.sunriseTime * 1000),
-          sunsetTime: new Date(today.sunsetTime * 1000),
-          moonPhase: today.moonPhase,
-          precipIntensity: today.precipIntensity,
-          precipIntensityMax: today.precipIntensityMax,
-          precipIntensityMaxTime: today.precipIntensityMaxTime,
-          precipProbability: today.precipProbability,
-          precipAccumulation: today.precipAccumulation,
-          precipType: today.precipType,
-          temperatureHigh: today.temperatureHigh,
-          temperatureHighTime: new Date(today.temperatureHighTime * 1000),
-          temperatureLow: today.temperatureLow,
-          temperatureLowTime: new Date(today.temperatureLowTime * 1000),
-          apparentTemperatureHigh: today.apparentTemperatureHigh,
-          apparentTemperatureHighTime: new Date(
-            today.apparentTemperatureHighTime * 1000,
-          ),
-          apparentTemperatureLow: today.apparentTemperatureLow,
-          apparentTemperatureLowTime: new Date(
-            today.apparentTemperatureLowTime * 1000,
-          ),
-          dewPoint: today.dewPoint,
-          humidity: today.humidity,
+          time: new Date(today.dt * 1000),
+          sunriseTime: new Date(today.sunrise * 1000),
+          sunsetTime: new Date(today.sunset * 1000),
+          moonriseTime: new Date(today.moonrise * 1000),
+          moonsetTime: new Date(today.moonset * 1000),
+          moonPhase: today.moon_phase,
+          temperature: {
+            morning: today.temp.morn,
+            day: today.temp.day,
+            evening: today.temp.eve,
+            night: today.temp.night,
+            min: today.temp.min,
+            max: today.temp.max,
+          },
+          apparentTemperature: {
+            morning: today.feels_like.morn,
+            day: today.feels_like.day,
+            evening: today.feels_like.eve,
+            night: today.feels_like.night,
+          },
           pressure: today.pressure,
-          windSpeed: today.windSpeed,
-          windBearing: today.windBearing,
-          cloudCover: today.cloudCover,
-          uvIndex: today.uvIndex,
-          uvIndexTime: new Date(today.uvIndexTime * 1000),
-          visibility: today.visibility,
-          temperatureMin: today.temperatureMin,
-          temperatureMinTime: new Date(today.temperatureMinTime * 1000),
-          temperatureMax: today.temperatureMax,
-          temperatureMaxTime: new Date(today.temperatureMaxTime * 1000),
-          apparentTemperatureMin: today.apparentTemperatureMin,
-          apparentTemperatureMinTime: new Date(
-            today.apparentTemperatureMinTime * 1000,
-          ),
-          apparentTemperatureMax: today.apparentTemperatureMax,
-          apparentTemperatureMaxTime: new Date(
-            today.apparentTemperatureMaxTime * 1000,
-          ),
+          humidity: today.humidity,
+          dewPoint: today.dew_point,
+          cloudCover: today.clouds,
+          uvIndex: today.uvi,
+          windSpeed: today.wind_speed,
+          windGust: today.wind_gust,
+          windDegree: today.wind_deg,
+          precipProbability: today.pop,
+          rain: today.rain,
+          snow: today.snow,
+          weather: {
+            id: today.weather.id,
+            main: today.weather.main,
+            description: today.weather.description,
+            icon: today.weather.icon,
+          },
         },
       });
     } catch (e) {
