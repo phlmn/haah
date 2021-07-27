@@ -70,8 +70,9 @@ async function startServer(
     };
     const inMemoryFile = buildResult.find((f) => f.path == req.url);
     if (inMemoryFile) {
+      const buffer = Buffer.from(inMemoryFile.contents);
       prepare(res);
-      res.end(inMemoryFile.contents);
+      res.end(buffer);
     } else {
       if (req.url == '/') {
         req.url = '/index.html';
