@@ -8,6 +8,9 @@ export {state, updateState } from '../state';
 import { io } from 'socket.io-client';
 import React, { useEffect, useState } from 'react';
 import { applyStatePatch, lastPatchProducer, PatchType, updateStateHooks, usedTracker } from '../state';
+import { enablePatches } from 'immer';
+
+enablePatches();
 
 function initSocketIo() {
   const socket = io();

@@ -60,6 +60,7 @@ async function buildFrontend(siteRoot: string) {
 }
 
 async function startServer(
+  listenIp: string,
   port: number,
   buildResult: { path: string; contents: Uint8Array }[],
 ) {
@@ -70,8 +71,9 @@ async function startServer(
     };
     const inMemoryFile = buildResult.find((f) => f.path == req.url);
     if (inMemoryFile) {
+      const buffer = Buffer.from(inMemoryFile.contents);
       prepare(res);
-      res.end(inMemoryFile.contents);
+      res.end(buffer);
     } else {
       if (req.url == '/') {
         req.url = '/index.html';
@@ -118,17 +120,18 @@ async function startServer(
     socket.emit('patch_server', patch);
   });
 
-  server.listen(port, '0.0.0.0', () => {
-    console.log(`WebUi is running on http://0.0.0.0:${port}`);
+  server.listen(port, listenIp, () => {
+    console.log(`WebUi is running on http://${listenIp}:${port}`);
   });
 }
 
 export async function initWebui(
+  listenIp = '0.0.0.0',
   port = 1235,
   siteRoot: string = `${process.cwd()}/site`,
 ) {
   const buildResult = await buildFrontend(siteRoot);
-  await startServer(port, buildResult.outputFiles);
+  await startServer(listenIp ,port, buildResult.outputFiles);
 }
 
 export function webuiWidget<T>(name: string, widget: React.FunctionComponent) {}

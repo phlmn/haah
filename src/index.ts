@@ -3,9 +3,12 @@ export * from './io';
 export * from './webui';
 
 import glob from 'glob';
+import { enablePatches } from 'immer';
 import { readState, saveState, saveStateSync } from './persist_state';
 import { onExit } from './process';
 import { globalState } from './state';
+
+enablePatches();
 
 export async function run(siteRoot: string = `${process.cwd()}/site`) {
   // try to load state from file, fall back to default state
