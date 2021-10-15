@@ -1,11 +1,11 @@
 import { join } from 'path';
-import http, { IncomingMessage, ServerResponse } from 'http';
+import http, { ServerResponse } from 'http';
 import glob from 'glob';
 import fs from 'fs';
 import mime from 'mime';
 
 import * as io from 'socket.io';
-const esbuild = require('esbuild'); // TODO: why cant we import this???
+import * as esbuild from 'esbuild';
 
 import {
   createAllNewPatch,
@@ -56,6 +56,7 @@ async function buildFrontend(siteRoot: string) {
     outdir: '/',
     bundle: true,
     write: false,
+    minify: true,
   });
 }
 
