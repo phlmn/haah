@@ -82,6 +82,11 @@ export function weatherSensor(
       const parsedRes = await res.json();
       const { current } = parsedRes;
 
+      if (!parsedRes.daily) {
+        console.error("[weather_sensor] Failed to get weather info. Response:", parsedRes);
+        return;
+      }
+
       const today = parsedRes.daily[0];
 
       handler({
@@ -148,7 +153,7 @@ export function weatherSensor(
         },
       });
     } catch (e) {
-      console.error('Error in weatherSensor', e);
+      console.error('[weather_sensor] Error in weatherSensor', e);
     }
   }
 
