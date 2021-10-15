@@ -126,7 +126,10 @@ export function state<T extends object>(
     }
   });
 
-  return new Proxy(globalState.inner[key], handler) as unknown as StateSlice<T>;
+  // We proxy `{}` instead of `globalState.inner[key]` because the latter is
+  // autofreezed by immer.js  and proxies of freezed objects may only return
+  // the original value on `get`, which would be bad for our us.
+  return new Proxy({}, handler) as unknown as StateSlice<T>;
 }
 
 export let lastPatchProducer: () => PatchType = () => ({
