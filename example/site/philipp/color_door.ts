@@ -10,10 +10,8 @@ mqttActuator('zigbee2mqtt/philipp/color_door/set', () => {
 
   return {
     state: 'on',
-    brightness: (isDaylight() ? 180 : 100) * philippsRoom.brightness,
+    brightness: (isDaylight() ? 180 : 120) * philippsRoom.brightness,
     transition: 0.3,
-    color: isDaylight()
-      ? { r: 86, g: 155, b: 142 }
-      : { r: 200, g: 155, b: 100 },
+    color: { r: 200, g: 155, b: 100 },
   };
 });

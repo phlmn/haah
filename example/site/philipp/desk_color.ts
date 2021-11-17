@@ -4,8 +4,8 @@ import { philippsRoom } from '.';
 import { isDaylight } from '../environment_state';
 
 const productiveColor = { r: 255, g: 225, b: 140 };
-const defaultColor = { h: 30, s: 255, l: 255 };
-const cozyColor = { r: 100, g: 40, b: 0 };
+const defaultColor = { r: 255, g: 225, b: 140 };
+const cozyColor = { r: 190, g: 135, b: 50 };
 
 function color() {
   if (philippsRoom.brightness < 0.2) {
@@ -26,7 +26,7 @@ mqttActuator('zigbee2mqtt/philipp/desk_color/set', () => {
 
   return {
     state: 'on',
-    brightness: 40 + 215 * philippsRoom.brightness,
+    brightness: 200 * philippsRoom.brightness,
     color: color(),
     transition: 0.3,
   };

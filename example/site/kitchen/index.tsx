@@ -77,6 +77,6 @@ mqttActuator('zigbee2mqtt/kitchen/table/set', () => {
 
   return {
     state: 'on',
-    brightness: 120,
+    brightness: 160,
   };
 });
