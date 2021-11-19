@@ -1,9 +1,9 @@
 import { state, updateState, timeSensor, weatherSensor } from 'haah';
 
-import { darkSkyApiKey, location } from '../secrets';
+import { openWeatherMapApiKey, location } from '../secrets';
 import { isTimeBetween } from '../util/time';
 
-let environmentState = state('time', {
+export const environmentState = state('time', {
   time: new Date(),
   weather: null,
 });
@@ -14,7 +14,7 @@ timeSensor((time) => {
   });
 });
 
-weatherSensor(darkSkyApiKey, location.lat, location.long, (weather) => {
+weatherSensor(openWeatherMapApiKey, location.lat, location.long, (weather) => {
   updateState(environmentState, (environmentState) => {
     environmentState.weather = weather;
   });

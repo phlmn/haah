@@ -1,7 +1,7 @@
 import { run, initMqtt, initWebui } from 'haah';
 
 async function main() {
-  await initMqtt('tcp://localhost:1883');
+  await initMqtt('tcp://automate.local:1883');
   initWebui();
 
   // this function collects all typescript files from the `site/` folder and runs them.

@@ -27,7 +27,7 @@ async function buildFrontend(siteRoot: string) {
         { filter: /^site_root$/, namespace: 'site_root' },
         async (args: any) => {
           let imports = glob
-            .sync(`${siteRoot}/**/*.ts*`)
+            .sync(`${siteRoot}/**/*.tsx`)
             .map((f, i) => `import '${f}';\n`)
             .join('');
           return {
