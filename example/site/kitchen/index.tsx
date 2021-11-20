@@ -18,10 +18,10 @@ const kitchen = state('kitchen', {
 
 webuiWidget('Kitchen', () => {
   return <Form layout='horizontal'>
-    <LabeledSwitch label={"ON"} checked={kitchen.lightOn} onChange={value =>
+    <LabeledSwitch label="On" checked={kitchen.lightOn} onChange={value =>
       updateState(kitchen, (kitchen) => { kitchen.lightOn = value })
     }/>
-    <LabeledSwitch label={"CINEMA"} checked={kitchen.cinema} onChange={value =>
+    <LabeledSwitch label="Cinema" checked={kitchen.cinema} onChange={value =>
       updateState(kitchen, (kitchen) => { kitchen.cinema = value })
     }/>
   </Form>;

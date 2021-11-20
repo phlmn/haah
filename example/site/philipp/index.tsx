@@ -2,6 +2,7 @@ import { state, updateState, webuiWidget } from 'haah';
 
 import { Slider, Switch } from 'antd';
 import React from 'react';
+import { LabeledSwitch } from '../../util/frontend';
 
 export const philippsRoom = state('philippsRoom', {
   lightOn: false,
@@ -14,7 +15,8 @@ export const philippsRoom = state('philippsRoom', {
 webuiWidget('Philipps Room', () => {
   return (
     <>
-      <Switch
+      <LabeledSwitch
+        label="Light On"
         checked={philippsRoom.lightOn}
         onChange={(checked) =>
           updateState(philippsRoom, (state) => {
@@ -22,7 +24,8 @@ webuiWidget('Philipps Room', () => {
           })
         }
       />
-      <Switch
+      <LabeledSwitch
+        label="Productive"
         checked={philippsRoom.productive}
         onChange={(checked) =>
           updateState(philippsRoom, (state) => {
@@ -30,7 +33,8 @@ webuiWidget('Philipps Room', () => {
           })
         }
       />
-      <Switch
+      <LabeledSwitch
+        label="Desk Power"
         checked={philippsRoom.deskPower}
         onChange={(checked) =>
           updateState(philippsRoom, (state) => {
@@ -52,7 +56,7 @@ webuiWidget('Philipps Room', () => {
       <Slider
         value={philippsRoom.deskTempFactor}
         min={0.5}
-        step={0.01}
+        step={0.05}
         max={1.5}
         onChange={(value: number) =>
           updateState(philippsRoom, (state) => {

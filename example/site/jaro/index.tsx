@@ -14,7 +14,7 @@ export const jarosRoom = state('jaro', {
 
 webuiWidget('Jaros Light', () => {
   return <Form layout='horizontal'>
-    <LabeledSwitch label={"ON"} checked={jarosRoom.lightOn} onChange={value =>
+    <LabeledSwitch label="On" checked={jarosRoom.lightOn} onChange={value =>
       updateState(jarosRoom, (jarosRoom) => { jarosRoom.lightOn = value })
     } />
     <Form.Item>
