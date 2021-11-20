@@ -6,7 +6,7 @@ function colorTemp() {
   if (philippsRoom.brightness < 0.2) {
     return 500;
   } else {
-    return 290 + ((1 - philippsRoom.brightness) * 100);
+    return (310 + ((1 - philippsRoom.brightness) * 100)) * (philippsRoom.deskTempFactor);
   }
 }
 

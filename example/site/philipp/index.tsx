@@ -8,6 +8,7 @@ export const philippsRoom = state('philippsRoom', {
   brightness: 1.0,
   productive: false,
   deskPower: false,
+  deskTempFactor: 1.0,
 });
 
 webuiWidget('Philipps Room', () => {
@@ -45,6 +46,17 @@ webuiWidget('Philipps Room', () => {
         onChange={(brightness: number) =>
           updateState(philippsRoom, (state) => {
             state.brightness = brightness;
+          })
+        }
+      />
+      <Slider
+        value={philippsRoom.deskTempFactor}
+        min={0.5}
+        step={0.01}
+        max={1.5}
+        onChange={(value: number) =>
+          updateState(philippsRoom, (state) => {
+            state.deskTempFactor = value;
           })
         }
       />
