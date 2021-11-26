@@ -16,7 +16,7 @@
     "@types/socket.io": "^3.0.2",
     "antd": "^4.15.4",
     "async-mqtt": "^2.6.1",
-    "esbuild": "^0.13.0",
+    "esbuild": "^0.14.0",
     "glob": "^7.1.6",
     "immer": "^9.0.6",
     "isomorphic-fetch": "^3.0.0",
