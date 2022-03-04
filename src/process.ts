@@ -1,6 +1,6 @@
 export async function onExit(
   callback: (
-    options: { exit?: boolean; cleanup?: boolean },
+    options: { exit?: boolean },
     code: number,
   ) => void,
 ) {
@@ -10,18 +10,16 @@ export async function onExit(
   process.stdin.resume();
 
   function exitHandler(
-    options: { exit?: boolean; cleanup?: boolean },
+    options: { exit?: boolean },
     exitCode: number,
   ) {
     callback && callback(options, exitCode);
 
-    if (options.cleanup) console.log('clean');
-    if (exitCode || exitCode === 0) console.log(exitCode);
     if (options.exit) process.exit();
   }
 
   // do something when app is closing
-  process.on('exit', exitHandler.bind(null, { cleanup: true }));
+  process.on('exit', exitHandler.bind(null, {}));
 
   // catches ctrl+c event
   process.on('SIGINT', exitHandler.bind(null, { exit: true }));

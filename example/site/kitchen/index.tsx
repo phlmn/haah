@@ -60,7 +60,6 @@ mqttActuator('zigbee2mqtt/kitchen/deckenfluter/set', () => {
 });
 
 mqttActuator('zigbee2mqtt/kitchen/kuchenzeile/set', () => {
-  console.log(kitchen.lightOn);
   if (!kitchen.lightOn) {
     return { state: 'off' };
   }

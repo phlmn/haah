@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "An example how to use HAAH",
   "scripts": {
-    "start": "ts-node-dev index.ts"
+    "start": "haah"
   },
   "license": "AGPL-3.0-only",
   "dependencies": {
@@ -11,6 +11,8 @@
     "@types/react": "^17.0.5",
     "antd": "^4.15.4",
     "date-fns": "^2.25.0",
+    "glob": "^7.2.0",
+    "glob-promise": "^4.2.2",
     "haah": "file:..",
     "react": "^17.0.2",
     "telegraf": "^4.4.2",
