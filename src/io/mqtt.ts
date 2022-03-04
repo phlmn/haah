@@ -1,5 +1,6 @@
 import MQTT, { IClientOptions } from 'async-mqtt';
 import { registerActuator } from '..';
+import { registerModuleCleanup } from '../modules';
 
 export let mqttClient: MQTT.AsyncClient = null;
 export async function initMqtt(brokerUri: string, opts: IClientOptions = {}) {
@@ -11,13 +12,15 @@ export function mqttActuator(topic: string, fn: () => any) {
     throw new Error('call initMqtt() first!');
   }
 
-  registerActuator(
+  const cleanupFn = registerActuator(
     fn,
     async (result: any) => {
       await mqttClient.publish(topic, JSON.stringify(result));
     },
     `mqtt://${topic}`,
   );
+
+  registerModuleCleanup(cleanupFn);
 }
 
 export function mqttSensor(topic: string, handler: (payload: any) => void) {
@@ -26,7 +29,8 @@ export function mqttSensor(topic: string, handler: (payload: any) => void) {
   }
 
   mqttClient.subscribe(topic);
-  mqttClient.on('message', (messageTopic, message) => {
+
+  const listener = (messageTopic: string, message: any) => {
     if (messageTopic === topic) {
       console.debug(topic, message.toString());
 
@@ -36,5 +40,11 @@ export function mqttSensor(topic: string, handler: (payload: any) => void) {
         console.error(`Error in sensor mqtt://${topic}`, e);
       }
     }
+  };
+
+  mqttClient.on('message', listener);
+
+  registerModuleCleanup(() => {
+    mqttClient.removeListener('message', listener);
   });
 }

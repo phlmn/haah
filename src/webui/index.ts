@@ -38,7 +38,7 @@ async function buildFrontend(siteRoot: string) {
         },
       );
       build.onResolve({ filter: /^haah$/ }, (args: any) => {
-        return { path: join(__dirname, 'haah_frontend.tsx') };
+        return { path: join(__dirname, '../../src/webui/haah_frontend.tsx') };
       });
       build.onResolve({ filter: /^react$/ }, (args: any) => {
         // we have to rewrite all react instances to our own
@@ -49,8 +49,9 @@ async function buildFrontend(siteRoot: string) {
     },
   };
 
+
   return await esbuild.build({
-    entryPoints: [join(__dirname, 'www/index.tsx')],
+    entryPoints: [join(__dirname, '../../src/webui/www/index.tsx')],
     plugins: [haahEsbuildPlugin],
     sourcemap: true,
     outdir: '/',
@@ -79,7 +80,7 @@ async function startServer(
       if (req.url == '/') {
         req.url = '/index.html';
       }
-      fs.readFile(join(__dirname, 'www', req.url), function (err, data) {
+      fs.readFile(join(__dirname, '../../src/webui/www', req.url), function (err, data) {
         if (!err) {
           prepare(res);
           res.end(data);
@@ -97,7 +98,6 @@ async function startServer(
 
     let last_patch = +new Date();
     connection.on('patch_ui', (patch: PatchType) => {
-      console.log(patch);
       try {
         last_patch = +new Date();
         applyStatePatch(patch);
@@ -132,7 +132,7 @@ export async function initWebui(
   siteRoot: string = `${process.cwd()}/site`,
 ) {
   const buildResult = await buildFrontend(siteRoot);
-  await startServer(listenIp ,port, buildResult.outputFiles);
+  await startServer(listenIp, port, buildResult.outputFiles);
 }
 
 export function webuiWidget<T>(name: string, widget: React.FunctionComponent) {}

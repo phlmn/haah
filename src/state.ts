@@ -1,7 +1,8 @@
-import { Patch, produceWithPatches } from 'immer';
+import { produceWithPatches } from 'immer';
+import { registerModuleCleanup } from './modules';
 
 /**
- * Hols all states of the state slices which by themselves don't store any data.
+ * Holds all states of the state slices which by themselves don't store any data.
  */
 type GlobalStateType = Record<string, Record<string, any>>;
 export const globalState = { inner: {} as GlobalStateType };
@@ -49,7 +50,8 @@ export function registerActuator(
 ) {
   let dependencies: string[] = null;
   let state = null as any;
-  updateStateHooks.push((patch) => {
+
+  const hook = (patch: PatchType) => {
     const needsUpdate =
       dependencies == null ||
       dependencies.some((dep) => patch.changed.includes(dep));
@@ -72,7 +74,13 @@ export function registerActuator(
         console.error(`Error in actuator ${name}`, e);
       }
     }
-  });
+  };
+
+  updateStateHooks.push(hook);
+
+  return () => {
+    updateStateHooks.splice(updateStateHooks.findIndex((item) => item == hook), 1);
+  }
 }
 
 export type StateSlice<T> = T & {
@@ -89,6 +97,10 @@ export function state<T extends object>(
     throw Error(`attempted to use key "${key}" twice. this is illegal.`);
   }
   usedKeys.push(key);
+
+  registerModuleCleanup(() => {
+    usedKeys.splice(usedKeys.findIndex(item => item === key));
+  });
 
   const handler = {
     get(obj: {}, prop: string) {
