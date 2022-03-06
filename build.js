@@ -1,5 +1,5 @@
 const { build } = require('esbuild');
-const glob = require('glob-promise');
+const glob = require('fast-glob');
 const { Project } = require('ts-morph');
 
 async function run() {
@@ -12,7 +12,7 @@ async function run() {
     skipAddingFilesFromTsConfig: true,
   });
   tsProject.addSourceFilesAtPaths(files);
-  tsProject.emit();
+  await tsProject.emit();
 
   await build({
     entryPoints: files,
