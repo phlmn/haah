@@ -1,5 +1,5 @@
 import { state, updateState, mqttActuator, mqttSensor, webuiWidget } from 'haah';
-import { interpolate } from '../../util/interpolate';
+import { interpolate, clamp } from '../../util/interpolate';
 
 import React from 'react';
 import { Slider, Form } from 'antd';
@@ -58,6 +58,32 @@ mqttSensor('zigbee2mqtt/jaro/switch', (payload) =>
 );
 
 
+
+mqttSensor('zigbee2mqtt/jaro/switch_big', (payload) =>
+  updateState(jarosRoom, (jarosRoom) => {
+    const actions = {
+      on() {
+        jarosRoom.lightOn = true;
+        jarosRoom.brightness = 0.7;
+      },
+
+      off() {
+        jarosRoom.lightOn = false;
+      },
+
+      arrow_right_click() {
+        jarosRoom.brightness = clamp(jarosRoom.brightness + .2, 0, 1);
+      },
+
+      arrow_left_click() {
+        jarosRoom.brightness = clamp(jarosRoom.brightness - .2, 0, 1);
+      },
+    };
+    actions[payload.action as keyof typeof actions]();
+  }),
+);
+
+
 mqttSensor('zigbee2mqtt/jaro/rotary', (payload) => updateState(jarosRoom, (jarosRoom) => {
   const actions = {
     toggle() {
@@ -106,7 +132,7 @@ function jaroNormalLamp(
 mqttActuator('zigbee2mqtt/jaro/decke/set', jaroNormalLamp());
 mqttActuator('zigbee2mqtt/jaro/desk/set', jaroNormalLamp());
 mqttActuator('zigbee2mqtt/jaro/desk_white/set', jaroNormalLamp());
-mqttActuator('zigbee2mqtt/jaro/bed/set', jaroNormalLamp(1, 150, 150, false));
+mqttActuator('zigbee2mqtt/jaro/dritte/set', jaroNormalLamp());
 
 mqttActuator('zigbee2mqtt/jaro/industrie/set', () => {
   if (!jarosRoom.lightOn) {
@@ -118,8 +144,8 @@ mqttActuator('zigbee2mqtt/jaro/industrie/set', () => {
     transition: 0,
     ...interpolate(
       jarosRoom.comfort,
-      { brightness: 130, color: { r: 255, g: 150, b: 0 } },
-      { brightness: 150, color: { r: 0, g: 255, b: 200 } },
+      { brightness: 1, color: { r: 255, g: 50, b: 0 } },
+      { brightness: 255, color: { r: 0, g: 255, b: 200 } },
     ),
   };
 });
