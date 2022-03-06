@@ -23,6 +23,7 @@ async function onBuild(
   error: BuildFailure | null,
   result: BuildResult | null,
   rootFolder: string,
+  initial: boolean,
 ) {
   if (error || !result) {
     console.error('Failed to build modules.');
@@ -44,14 +45,16 @@ async function onBuild(
   );
   console.log();
 
-  cleanupModule('index');
+  if (initial) {
+    cleanupModule('index');
 
-  console.log('Loading application');
-  setCurrentModule(moduleName('index.js', rootFolder));
-  const mainFun = require(path.join(rootFolder, 'index.js')).default;
-  await mainFun();
-  setCurrentModule(null);
-  console.log();
+    console.log('Loading application');
+    setCurrentModule(moduleName('index.js', rootFolder));
+    const mainFun = require(path.join(rootFolder, 'index.js')).default;
+    await mainFun();
+    setCurrentModule(null);
+    console.log();
+  }
 
   // // HACK: wait until the application is initialized before loading site modules
   // await new Promise((resolve) => {
@@ -191,10 +194,10 @@ export async function run(root: string = process.cwd()) {
         outbase: './',
       });
 
-      onBuild(null, buildResult2, path.join(root, 'dist'));
+      onBuild(null, buildResult2, path.join(root, 'dist'), false);
     });
 
-  onBuild(null, buildResult, path.join(root, 'dist'));
+  onBuild(null, buildResult, path.join(root, 'dist'), true);
 }
 
 function moduleName(fileName: string, rootFolder: string) {
