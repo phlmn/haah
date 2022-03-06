@@ -1,14 +1,6 @@
-import { run, initMqtt, initWebui } from 'haah';
+import { initMqtt, initWebui } from 'haah';
 
-async function main() {
+export default async function main() {
   await initMqtt('tcp://localhost:1883');
   initWebui();
-
-  // this function collects all typescript files from the `site/` folder and runs them.
-  // this might feel a bit 'magic' at first but is rather handy when adding / removing code.
-  // run();
 }
-
-// we need to create a main function and imidiately call it, because node.js does not support
-// top level await.
-main();

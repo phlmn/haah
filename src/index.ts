@@ -2,68 +2,143 @@ export * from './state';
 export * from './io';
 export * from './webui';
 
+import chokidar from 'chokidar';
 import { build, BuildFailure, BuildResult } from 'esbuild';
-import glob from 'glob-promise';
+import glob from 'fast-glob';
 import { enablePatches } from 'immer';
 import path from 'path';
+import { DirectedGraph } from 'graphology';
+
 import { cleanupModule, setCurrentModule } from './modules';
 import { readState, saveState, saveStateSync } from './persist_state';
 import { onExit } from './process';
 import { globalState } from './state';
+import { writeFile } from 'fs/promises';
 
 enablePatches();
 
-async function onBuild(error: BuildFailure | null, result: BuildResult | null) {
+const dependencyGraph = new DirectedGraph<{ updated: number }>();
+
+async function onBuild(
+  error: BuildFailure | null,
+  result: BuildResult | null,
+  rootFolder: string,
+) {
   if (error || !result) {
-    console.error("Failed to build modules.");
+    console.error('Failed to build modules.');
     console.error(error);
-    return
+    return;
   }
 
-  const processedFiles = Object.keys(result.metafile.outputs);
+  const processedFiles = Object.keys(result.metafile.outputs)
+    .filter((file) => file.endsWith('.js'))
+    .map((file) => path.resolve(file));
 
   const siteFiles = processedFiles.filter((file) =>
-    file.startsWith('dist/site/'),
+    file.startsWith(path.join(rootFolder, 'site/')),
   );
 
   console.log('Found modules:');
-  console.log(siteFiles.map((file) => `    ${moduleName(file)}`).join('\n'));
+  console.log(
+    siteFiles.map((file) => `    ${moduleName(file, rootFolder)}`).join('\n'),
+  );
   console.log();
 
   cleanupModule('index');
 
   console.log('Loading application');
-  setCurrentModule(moduleName('dist/index.js'));
-  require(path.join(process.cwd(), 'dist/index.js'));
+  setCurrentModule(moduleName('index.js', rootFolder));
+  const mainFun = require(path.join(rootFolder, 'index.js')).default;
+  await mainFun();
   setCurrentModule(null);
   console.log();
 
-  // HACK: wait until the application is initialized before loading site modules
-  await new Promise((resolve) => {
-    setTimeout(resolve, 100)
-  });
+  // // HACK: wait until the application is initialized before loading site modules
+  // await new Promise((resolve) => {
+  //   setTimeout(resolve, 100);
+  // });
 
   for (const file of siteFiles) {
-    cleanupModule(moduleName(file));
-    const modulePath = path.join(process.cwd(), file);
-    delete require.cache[require.resolve(modulePath)];
+    cleanupModule(moduleName(file, rootFolder));
+    delete require.cache[require.resolve(file)];
   }
 
   for (const file of siteFiles) {
     try {
-      const modulePath = path.join(process.cwd(), file);
-      console.debug(`Loading module '${moduleName(file)}'`);
-      setCurrentModule(moduleName(file));
-      require(modulePath);
+      // const modulePath = path.join(process.cwd(), file);
+      console.debug(`Loading module '${moduleName(file, rootFolder)}'`);
+      setCurrentModule(moduleName(file, rootFolder));
+      require(file);
       setCurrentModule(null);
+
+      const moduleInfo = require.cache[require.resolve(file)];
+
+      collectDependencies(dependencyGraph, moduleInfo, Date.now(), rootFolder);
     } catch (e) {
-      console.error(`Failed to load module '${moduleName(file)}'\n `, e, '\n');
-      cleanupModule(moduleName(file));
+      console.error(
+        `Failed to load module '${moduleName(file, rootFolder)}'\n `,
+        e,
+        '\n',
+      );
+      cleanupModule(moduleName(file, rootFolder));
     }
+  }
+
+  let dotString = '';
+  dependencyGraph.forEachDirectedEdge((edge, attrs, source, target) => {
+    dotString += `"${source}" -> "${target}"\n`;
+  });
+
+  // To directly assign the positions to the nodes:
+  await writeFile('./graph.dot', 'digraph G {\n' + dotString + '}');
+}
+
+function collectDependencies(
+  graph: DirectedGraph<{ updated: number }>,
+  moduleInfo: NodeModule,
+  iteration: number,
+  rootFolder: string,
+  parent?: NodeModule,
+) {
+  const filePath = moduleInfo.id;
+
+  if (filePath.includes('node_modules') || filePath.startsWith(__dirname))
+    return;
+
+  const nodeId = moduleName(filePath, rootFolder);
+
+  const alreadyCollected =
+    graph.hasNode(nodeId) &&
+    graph.getNodeAttribute(nodeId, 'updated') == iteration;
+
+  if (graph.hasNode(nodeId)) {
+    graph.updateNodeAttribute(nodeId, 'updated', () => iteration);
+  } else {
+    graph.addNode(nodeId, {
+      updated: iteration,
+    });
+  }
+
+  if (parent?.id && !graph.hasEdge(moduleName(parent.id, rootFolder), nodeId)) {
+    graph.addDirectedEdge(moduleName(parent.id, rootFolder), nodeId);
+  }
+
+  if (!alreadyCollected) {
+    // drop old information
+    graph.forEachDirectedEdge((edge, _attrs, source) => {
+      if (source == nodeId) {
+        graph.dropEdge(edge);
+      }
+    });
+
+    // add edges to dependencies
+    moduleInfo.children.forEach((childInfo) => {
+      collectDependencies(graph, childInfo, iteration, rootFolder, moduleInfo);
+    });
   }
 }
 
-export async function run(siteRoot: string = `${process.cwd()}/site`) {
+export async function run(root: string = process.cwd()) {
   // try to load state from file, fall back to default state
   try {
     globalState.inner = await readState();
@@ -84,8 +159,11 @@ export async function run(siteRoot: string = `${process.cwd()}/site`) {
 
   // const files = await glob(`${siteRoot}/**/*.ts*`);
 
-  const files = await glob(`${process.cwd()}/**/*.ts*`, {
-    ignore: [`${process.cwd()}/node_modules/**`, `${process.cwd()}/dist/**`],
+  const ignoredPaths = [`${root}/node_modules/**`, `${root}/dist/**`];
+  const filePattern = `${root}/**/*.ts*`;
+
+  const files = await glob(filePattern, {
+    ignore: ignoredPaths,
   });
 
   const buildResult = await build({
@@ -94,17 +172,36 @@ export async function run(siteRoot: string = `${process.cwd()}/site`) {
     format: 'cjs',
     platform: 'node',
     metafile: true,
-    incremental: true,
-    watch: {
-      onRebuild: onBuild,
-    },
+    outbase: './',
   });
 
-  onBuild(null, buildResult);
+  chokidar
+    .watch(filePattern, {
+      ignored: ignoredPaths,
+    })
+    .on('change', async (file) => {
+      console.log(moduleName(file, root));
+      console.log(dependencyGraph.hasNode(path));
+      const buildResult2 = await build({
+        entryPoints: [file],
+        outdir: 'dist',
+        format: 'cjs',
+        platform: 'node',
+        metafile: true,
+        outbase: './',
+      });
+
+      onBuild(null, buildResult2, path.join(root, 'dist'));
+    });
+
+  onBuild(null, buildResult, path.join(root, 'dist'));
 }
 
-const asdasd = 'dist/site/';
-
-function moduleName(fileName: string) {
-  return fileName.substring(asdasd.length, fileName.length - '.js'.length);
+function moduleName(fileName: string, rootFolder: string) {
+  return path
+    .resolve(fileName)
+    .substring(
+      path.resolve(rootFolder).length + 1,
+      fileName.length - '.js'.length,
+    );
 }
