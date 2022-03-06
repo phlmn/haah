@@ -49,17 +49,11 @@ async function onBuild(
     cleanupModule('index');
 
     console.log('Loading application');
-    setCurrentModule(moduleName('index.js', rootFolder));
+    setCurrentModule('index');
     const mainFun = require(path.join(rootFolder, 'index.js')).default;
     await mainFun();
     setCurrentModule(null);
-    console.log();
   }
-
-  // // HACK: wait until the application is initialized before loading site modules
-  // await new Promise((resolve) => {
-  //   setTimeout(resolve, 100);
-  // });
 
   for (const file of siteFiles) {
     cleanupModule(moduleName(file, rootFolder));
