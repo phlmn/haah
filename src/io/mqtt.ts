@@ -12,15 +12,13 @@ export function mqttActuator(topic: string, fn: () => any) {
     throw new Error('call initMqtt() first!');
   }
 
-  const cleanupFn = registerActuator(
+  registerActuator(
     fn,
     async (result: any) => {
       await mqttClient.publish(topic, JSON.stringify(result));
     },
     `mqtt://${topic}`,
   );
-
-  registerModuleCleanup(cleanupFn);
 }
 
 export function mqttSensor(topic: string, handler: (payload: any) => void) {

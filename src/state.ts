@@ -78,9 +78,9 @@ export function registerActuator(
 
   updateStateHooks.push(hook);
 
-  return () => {
+  registerModuleCleanup(() => {
     updateStateHooks.splice(updateStateHooks.findIndex((item) => item == hook), 1);
-  }
+  });
 }
 
 export type StateSlice<T> = T & {
