@@ -15,7 +15,7 @@ export function getCurrentModule() {
 type CleanupFn = () => void | Promise<void>;
 let cleanupFns: Array<{ fn: CleanupFn; module: string }> = [];
 
-export function registerModuleCleanup(fn: () => void | Promise<void>) {
+export function registerCleanup(fn: () => void | Promise<void>) {
   if (!currentModule) {
     // TODO: print warning? or collect cleanup that do not belong to a module?
     return;

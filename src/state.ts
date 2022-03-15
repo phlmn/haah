@@ -1,5 +1,5 @@
 import { produceWithPatches } from 'immer';
-import { registerModuleCleanup } from './modules';
+import { registerCleanup } from './modules';
 
 /**
  * Holds all states of the state slices which by themselves don't store any data.
@@ -78,7 +78,7 @@ export function registerActuator(
 
   updateStateHooks.push(hook);
 
-  registerModuleCleanup(() => {
+  registerCleanup(() => {
     updateStateHooks.splice(updateStateHooks.findIndex((item) => item == hook), 1);
   });
 }
@@ -98,7 +98,7 @@ export function state<T extends object>(
   }
   usedKeys.push(key);
 
-  registerModuleCleanup(() => {
+  registerCleanup(() => {
     usedKeys.splice(usedKeys.findIndex(item => item === key));
   });
 
