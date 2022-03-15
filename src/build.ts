@@ -7,37 +7,58 @@ import { writeFile } from 'fs/promises';
 import {
   cleanupModule,
   collectDependencies,
+  getDependents,
   graphAsDotString,
   moduleName,
   setCurrentModule,
+  sourceFile,
 } from './modules';
 import { DirectedGraph } from 'graphology';
 
+const TARGET_FOLDER = '.cache';
+
 const dependencyGraph = new DirectedGraph<{ updated: number }>();
 
-const buildOptions: BuildOptions = {
-  outdir: 'dist',
+const buildOptions: (root: string) => BuildOptions = (root) => ({
+  outdir: path.join(root, TARGET_FOLDER),
   format: 'cjs',
   platform: 'node',
   metafile: true,
   outbase: './',
-};
+  banner: {
+    js: `// Injected code for dependency tracking
+var __haah_internal__haah = require('haah');
+var __haah_internal__oldModule = __haah_internal__haah.__internal.getCurrentModule();
+__haah_internal__haah.__internal.setCurrentModule(
+  __haah_internal__haah.__internal.moduleName(__filename, '${path.join(
+    root,
+    TARGET_FOLDER,
+  )}')
+);
+`,
+  },
+  footer: {
+    js: `
+// Injected code for dependency tracking
+__haah_internal__haah.__internal.setCurrentModule(__haah_internal__oldModule);`,
+  },
+});
 
 const filePattern = (root: string) => `${root}/**/*.ts*`;
 const ignoredPaths = (root: string) => [
   `${root}/node_modules/**`,
-  `${root}/dist/**`,
+  `${root}/${TARGET_FOLDER}/**`,
 ];
 
 export async function buildSite(root: string) {
   const buildResult = await build({
-    ...buildOptions,
+    ...buildOptions(root),
     entryPoints: await glob(filePattern(root), {
       ignore: ignoredPaths(root),
     }),
   });
 
-  onBuild(buildResult, path.join(root, 'dist'), true);
+  onBuild(buildResult, path.join(root, TARGET_FOLDER), true);
 }
 
 export async function watchAndBuildChanges(root: string) {
@@ -46,18 +67,24 @@ export async function watchAndBuildChanges(root: string) {
       ignored: ignoredPaths(root),
     })
     .on('change', async (file) => {
+      const dependents = await Promise.all(
+        getDependents(dependencyGraph, moduleName(file, root)).map((module) =>
+          sourceFile(module, root),
+        ),
+      );
+
       const buildResult = await build({
-        ...buildOptions,
-        entryPoints: [file],
+        ...buildOptions(root),
+        entryPoints: [file, ...dependents],
       });
 
-      onBuild(buildResult, path.join(root, 'dist'), false);
+      onBuild(buildResult, path.join(root, TARGET_FOLDER), false);
     });
 }
 
 async function onBuild(
   result: BuildResult | null,
-  rootFolder: string,
+  buildRoot: string,
   initial: boolean,
 ) {
   if (!result) {
@@ -70,51 +97,45 @@ async function onBuild(
     .map((file) => path.resolve(file));
 
   const siteFiles = processedFiles.filter((file) =>
-    file.startsWith(path.join(rootFolder, 'site/')),
+    file.startsWith(path.join(buildRoot, 'site/')),
   );
 
-  console.log('Found modules:');
+  console.log('Loading modules:');
   console.log(
-    siteFiles.map((file) => `    ${moduleName(file, rootFolder)}`).join('\n'),
+    siteFiles.map((file) => `    ${moduleName(file, buildRoot)}`).join('\n'),
   );
   console.log();
 
   if (initial) {
-    cleanupModule('index');
-
     console.log('Loading application');
-    setCurrentModule('index');
-    const mainFun = require(path.join(rootFolder, 'index.js')).default;
+    const mainFun = require(path.join(buildRoot, 'index.js')).default;
     await mainFun();
-    setCurrentModule(null);
   }
 
   for (const file of siteFiles) {
-    cleanupModule(moduleName(file, rootFolder));
+    await cleanupModule(moduleName(file, buildRoot));
     delete require.cache[require.resolve(file)];
   }
 
   for (const file of siteFiles) {
     try {
-      console.debug(`Loading module '${moduleName(file, rootFolder)}'`);
-      setCurrentModule(moduleName(file, rootFolder));
+      console.debug(`Loading module '${moduleName(file, buildRoot)}'`);
       require(file);
-      setCurrentModule(null);
 
       const moduleInfo = require.cache[require.resolve(file)];
-      collectDependencies(dependencyGraph, moduleInfo, Date.now(), rootFolder);
+      collectDependencies(dependencyGraph, moduleInfo, Date.now(), buildRoot);
     } catch (e) {
       console.error(
-        `Failed to load module '${moduleName(file, rootFolder)}'\n `,
+        `Failed to load module '${moduleName(file, buildRoot)}'\n `,
         e,
         '\n',
       );
-      cleanupModule(moduleName(file, rootFolder));
+      cleanupModule(moduleName(file, buildRoot));
     }
   }
 
   await writeFile(
-    './dist/dependency_graph.dot',
+    path.join(buildRoot, 'dependency_graph.dot'),
     'digraph G {\n' + graphAsDotString(dependencyGraph) + '}',
   );
 }

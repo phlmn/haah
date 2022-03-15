@@ -1,9 +1,15 @@
+import { stat } from 'fs/promises';
 import Graph, { DirectedGraph } from 'graphology';
+import { bfsFromNode } from 'graphology-traversal';
 import path from 'path';
 
 let currentModule: string | null = null;
 export function setCurrentModule(mod: string | null) {
   currentModule = mod;
+}
+
+export function getCurrentModule() {
+  return currentModule;
 }
 
 type CleanupFn = () => void | Promise<void>;
@@ -77,6 +83,25 @@ export function collectDependencies(
   }
 }
 
+export function getDependents(dependencyGraph: Graph, module: string): string[] {
+  if (!dependencyGraph.hasNode(module)) {
+    return [];
+  }
+
+  const dependents: string[] = [];
+
+  bfsFromNode(
+    dependencyGraph,
+    module,
+    function (node, attr, depth) {
+      dependents.push(node);
+    },
+    { mode: 'in' },
+  );
+
+  return dependents;
+}
+
 export function graphAsDotString(dependencyGraph: Graph) {
   let dotString = '';
 
@@ -94,4 +119,22 @@ export function moduleName(fileName: string, rootFolder: string) {
       path.resolve(rootFolder).length + 1,
       fileName.length - '.js'.length,
     );
+}
+
+const EXTENSIONS = ['ts', 'tsx'];
+export async function sourceFile(module: string, rootFolder: string) {
+  const base = path.join(rootFolder, module);
+
+  for (let ext of EXTENSIONS) {
+    const filePath = base + '.' + ext;
+    try {
+      await stat(base + '.' + ext);
+      return filePath;
+    }
+    catch {
+      // no-op
+    }
+  }
+
+  throw Error('Source file not found');
 }
