@@ -8,6 +8,14 @@ import { readState, saveState, saveStateSync } from './persist_state';
 import { onExit } from './process';
 import { globalState } from './state';
 import { buildSite, watchAndBuildChanges } from './build';
+import { setCurrentModule, getCurrentModule, moduleName } from './modules';
+
+// internal functions needed in generated code
+export const __internal = {
+  setCurrentModule,
+  getCurrentModule,
+  moduleName,
+};
 
 enablePatches();
 
