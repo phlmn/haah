@@ -25,10 +25,10 @@ async function buildFrontend(siteRoot: string) {
       });
       build.onLoad(
         { filter: /^site_root$/, namespace: 'site_root' },
-        async (args: any) => {
+        async (_: any) => {
           let imports = glob
             .sync(`${siteRoot}/**/*.tsx`)
-            .map((f, i) => `import '${f}';\n`)
+            .map((f) => `import '${f}';\n`)
             .join('');
           return {
             contents: imports,

@@ -10,7 +10,6 @@ import {
   getDependents,
   graphAsDotString,
   moduleName,
-  setCurrentModule,
   sourceFile,
 } from './modules';
 import { DirectedGraph } from 'graphology';

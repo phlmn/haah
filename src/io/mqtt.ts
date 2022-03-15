@@ -1,6 +1,6 @@
 import MQTT, { IClientOptions } from 'async-mqtt';
 import { registerActuator } from '..';
-import { registerModuleCleanup } from '../modules';
+import { registerCleanup } from '../modules';
 
 export let mqttClient: MQTT.AsyncClient = null;
 export async function initMqtt(brokerUri: string, opts: IClientOptions = {}) {
@@ -42,7 +42,7 @@ export function mqttSensor(topic: string, handler: (payload: any) => void) {
 
   mqttClient.on('message', listener);
 
-  registerModuleCleanup(() => {
+  registerCleanup(() => {
     mqttClient.removeListener('message', listener);
   });
 }
