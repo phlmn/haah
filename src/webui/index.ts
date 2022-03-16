@@ -2,6 +2,7 @@ import { join } from 'path';
 import http, { ServerResponse } from 'http';
 import glob from 'glob';
 import fs from 'fs';
+import { readFile } from 'fs/promises';
 import mime from 'mime';
 
 import * as io from 'socket.io';
@@ -37,6 +38,31 @@ async function buildFrontend(siteRoot: string) {
           };
         },
       );
+
+      build.onResolve({ filter: /^fs(\/promises)?$/ }, (args: any) => {
+        return { path: 'fs', namespace: 'shims' };
+      });
+      build.onLoad({ filter: /^fs$/, namespace: 'shims' }, async (_: any) => {
+        return {
+          contents: await readFile(
+            join(__dirname, '../../src/webui/shims/fs.js'),
+          ),
+          loader: 'js',
+        };
+      });
+
+      build.onResolve({ filter: /^path$/ }, (args: any) => {
+        return { path: 'path', namespace: 'shims' };
+      });
+      build.onLoad({ filter: /^path$/, namespace: 'shims' }, async (_: any) => {
+        return {
+          contents: await readFile(
+            join(__dirname, '../../src/webui/shims/path.js'),
+          ),
+          loader: 'js',
+        };
+      });
+
       build.onResolve({ filter: /^haah$/ }, (args: any) => {
         return { path: join(__dirname, '../../src/webui/haah_frontend.tsx') };
       });
@@ -48,7 +74,6 @@ async function buildFrontend(siteRoot: string) {
       });
     },
   };
-
 
   return await esbuild.build({
     entryPoints: [join(__dirname, '../../src/webui/www/index.tsx')],
@@ -80,15 +105,18 @@ async function startServer(
       if (req.url == '/') {
         req.url = '/index.html';
       }
-      fs.readFile(join(__dirname, '../../src/webui/www', req.url), function (err, data) {
-        if (!err) {
-          prepare(res);
-          res.end(data);
-        } else {
-          res.writeHead(404);
-          res.end(JSON.stringify({ err, url: req.url }));
-        }
-      });
+      fs.readFile(
+        join(__dirname, '../../src/webui/www', req.url),
+        function (err, data) {
+          if (!err) {
+            prepare(res);
+            res.end(data);
+          } else {
+            res.writeHead(404);
+            res.end(JSON.stringify({ err, url: req.url }));
+          }
+        },
+      );
     }
   });
 
