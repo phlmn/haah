@@ -7,7 +7,7 @@ import { enablePatches } from 'immer';
 import { readState, saveState, saveStateSync } from './persist_state';
 import { onExit } from './process';
 import { globalState } from './state';
-import { buildSite, watchAndBuildChanges } from './build';
+import { buildSite } from './build';
 import { setCurrentModule, getCurrentModule, moduleName } from './modules';
 
 // internal functions needed in generated code
@@ -38,6 +38,5 @@ export async function run(root: string = process.cwd()) {
   }, 1000 * 60 * 15);
 
   // build site and watch for changes
-  await buildSite(root);
-  watchAndBuildChanges(root);
+  await buildSite(root, { watch: true });
 }

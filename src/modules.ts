@@ -1,7 +1,9 @@
 import { stat } from 'fs/promises';
-import Graph, { DirectedGraph } from 'graphology';
+import { DirectedGraph } from 'graphology';
 import { bfsFromNode } from 'graphology-traversal';
 import path from 'path';
+
+const dependencyGraph = new DirectedGraph<{ updated: number }>();
 
 let currentModule: string | null = null;
 export function setCurrentModule(mod: string | null) {
@@ -38,14 +40,14 @@ export async function cleanupModule(mod: string) {
   }
 }
 
-export function collectDependencies(
-  graph: DirectedGraph<{ updated: number }>,
+function collectDependencies(
   moduleInfo: NodeModule,
   iteration: number,
   rootFolder: string,
   parent?: NodeModule,
 ) {
   const filePath = moduleInfo.id;
+  const graph = dependencyGraph;
 
   if (filePath.includes('node_modules') || filePath.startsWith(__dirname))
     return;
@@ -78,12 +80,12 @@ export function collectDependencies(
 
     // add edges to dependencies
     moduleInfo.children.forEach((childInfo) => {
-      collectDependencies(graph, childInfo, iteration, rootFolder, moduleInfo);
+      collectDependencies(childInfo, iteration, rootFolder, moduleInfo);
     });
   }
 }
 
-export function getDependents(dependencyGraph: Graph, module: string): string[] {
+export function getAllDependents(module: string): string[] {
   if (!dependencyGraph.hasNode(module)) {
     return [];
   }
@@ -93,7 +95,7 @@ export function getDependents(dependencyGraph: Graph, module: string): string[] 
   bfsFromNode(
     dependencyGraph,
     module,
-    function (node, attr, depth) {
+    (node) => {
       dependents.push(node);
     },
     { mode: 'in' },
@@ -102,7 +104,7 @@ export function getDependents(dependencyGraph: Graph, module: string): string[] 
   return dependents;
 }
 
-export function graphAsDotString(dependencyGraph: Graph) {
+export function dependencyGraphAsDotString() {
   let dotString = '';
 
   dependencyGraph.forEachDirectedEdge((_edge, _attrs, source, target) => {
@@ -130,11 +132,34 @@ export async function sourceFile(module: string, rootFolder: string) {
     try {
       await stat(base + '.' + ext);
       return filePath;
-    }
-    catch {
+    } catch {
       // no-op
     }
   }
 
   throw Error('Source file not found');
+}
+
+export async function loadModuleFiles(siteFiles: string[], buildRoot: string) {
+  for (const file of siteFiles) {
+    await cleanupModule(moduleName(file, buildRoot));
+    delete require.cache[require.resolve(file)];
+  }
+
+  for (const file of siteFiles) {
+    try {
+      console.debug(`Loading module '${moduleName(file, buildRoot)}'`);
+      require(file);
+
+      const moduleInfo = require.cache[require.resolve(file)];
+      collectDependencies(moduleInfo, Date.now(), buildRoot);
+    } catch (e) {
+      console.error(
+        `Failed to load module '${moduleName(file, buildRoot)}'\n `,
+        e,
+        '\n',
+      );
+      cleanupModule(moduleName(file, buildRoot));
+    }
+  }
 }

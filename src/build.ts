@@ -5,18 +5,14 @@ import path from 'path';
 import { writeFile } from 'fs/promises';
 
 import {
-  cleanupModule,
-  collectDependencies,
-  getDependents,
-  graphAsDotString,
+  getAllDependents,
+  dependencyGraphAsDotString,
+  loadModuleFiles,
   moduleName,
   sourceFile,
 } from './modules';
-import { DirectedGraph } from 'graphology';
 
 const TARGET_FOLDER = '.cache';
-
-const dependencyGraph = new DirectedGraph<{ updated: number }>();
 
 const buildOptions: (root: string) => BuildOptions = (root) => ({
   outdir: path.join(root, TARGET_FOLDER),
@@ -43,54 +39,53 @@ __haah_internal__haah.__internal.setCurrentModule(__haah_internal__oldModule);`,
   },
 });
 
-const filePattern = (root: string) => `${root}/**/*.ts*`;
-const ignoredPaths = (root: string) => [
-  `${root}/node_modules/**`,
-  `${root}/${TARGET_FOLDER}/**`,
-];
+export async function buildSite(
+  root: string,
+  { watch }: { watch?: boolean } = {},
+) {
+  const filePattern = `${root}/**/*.ts*`;
+  const ignoredPaths = [
+    `${root}/node_modules/**`,
+    `${root}/${TARGET_FOLDER}/**`,
+  ];
 
-export async function buildSite(root: string) {
   const buildResult = await build({
     ...buildOptions(root),
-    entryPoints: await glob(filePattern(root), {
-      ignore: ignoredPaths(root),
+    entryPoints: await glob(filePattern, {
+      ignore: ignoredPaths,
     }),
   });
 
   onBuild(buildResult, path.join(root, TARGET_FOLDER), true);
-}
 
-export async function watchAndBuildChanges(root: string) {
-  chokidar
-    .watch(filePattern(root), {
-      ignored: ignoredPaths(root),
-    })
-    .on('change', async (file) => {
-      const dependents = await Promise.all(
-        getDependents(dependencyGraph, moduleName(file, root)).map((module) =>
-          sourceFile(module, root),
-        ),
-      );
+  if (watch) {
+    chokidar
+      .watch(filePattern, {
+        ignored: ignoredPaths,
+      })
+      .on('change', async (file) => {
+        // rebuild module and all of its dependents
+        const dependents = await Promise.all(
+          getAllDependents(moduleName(file, root)).map((module) =>
+            sourceFile(module, root),
+          ),
+        );
 
-      const buildResult = await build({
-        ...buildOptions(root),
-        entryPoints: [file, ...dependents],
+        const buildResult = await build({
+          ...buildOptions(root),
+          entryPoints: [file, ...dependents],
+        });
+
+        onBuild(buildResult, path.join(root, TARGET_FOLDER), false);
       });
-
-      onBuild(buildResult, path.join(root, TARGET_FOLDER), false);
-    });
+  }
 }
 
 async function onBuild(
-  result: BuildResult | null,
+  result: BuildResult,
   buildRoot: string,
   initial: boolean,
 ) {
-  if (!result) {
-    console.error('Failed to build modules.');
-    return;
-  }
-
   const processedFiles = Object.keys(result.metafile.outputs)
     .filter((file) => file.endsWith('.js'))
     .map((file) => path.resolve(file));
@@ -99,42 +94,25 @@ async function onBuild(
     file.startsWith(path.join(buildRoot, 'site/')),
   );
 
-  console.log('Loading modules:');
-  console.log(
-    siteFiles.map((file) => `    ${moduleName(file, buildRoot)}`).join('\n'),
-  );
-  console.log();
-
   if (initial) {
-    console.log('Loading application');
-    const mainFun = require(path.join(buildRoot, 'index.js')).default;
-    await mainFun();
-  }
+    const initializationFile = path.join(buildRoot, 'index.js');
 
-  for (const file of siteFiles) {
-    await cleanupModule(moduleName(file, buildRoot));
-    delete require.cache[require.resolve(file)];
-  }
-
-  for (const file of siteFiles) {
-    try {
-      console.debug(`Loading module '${moduleName(file, buildRoot)}'`);
-      require(file);
-
-      const moduleInfo = require.cache[require.resolve(file)];
-      collectDependencies(dependencyGraph, moduleInfo, Date.now(), buildRoot);
-    } catch (e) {
-      console.error(
-        `Failed to load module '${moduleName(file, buildRoot)}'\n `,
-        e,
-        '\n',
-      );
-      cleanupModule(moduleName(file, buildRoot));
+    if (processedFiles.includes(initializationFile)) {
+      console.log('Initializing application');
+      const initFn = require(initializationFile).default;
+      await initFn();
     }
   }
 
+  console.log('Loading modules:');
+  console.log(
+    siteFiles.map((file) => `    ${moduleName(file, buildRoot)}`).join('\n'),
+    '\n',
+  );
+  await loadModuleFiles(siteFiles, buildRoot);
+
   await writeFile(
     path.join(buildRoot, 'dependency_graph.dot'),
-    'digraph G {\n' + graphAsDotString(dependencyGraph) + '}',
+    'digraph G {\n' + dependencyGraphAsDotString() + '}',
   );
 }
