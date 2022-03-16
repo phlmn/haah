@@ -3,7 +3,7 @@ export function weatherSensor() { }
 export function mqttSensor() { }
 export function mqttActuator() { }
 
-export {state, updateState } from '../state';
+export { state, updateState } from '../state';
 
 import { io } from 'socket.io-client';
 import React, { useEffect, useState } from 'react';
