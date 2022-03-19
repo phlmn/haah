@@ -19,7 +19,9 @@ let cleanupFns: Array<{ fn: CleanupFn; module: string }> = [];
 
 export function registerCleanup(fn: () => void | Promise<void>) {
   if (!currentModule) {
-    // TODO: print warning? or collect cleanup that do not belong to a module?
+    console.error(
+      'WARNING: registerCleanup(…) called outside of a module. This has no effect.',
+    );
     return;
   }
 
