@@ -10,7 +10,7 @@
     "build": "node build.js"
   },
   "bin": {
-    "haah": "./cli.js"
+    "haah": "./cli-restart-wrapper.js"
   },
   "dependencies": {
     "@types/glob": "^7.1.3",

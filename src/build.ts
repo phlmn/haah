@@ -11,7 +11,9 @@ import {
   moduleName,
   sourceFile,
 } from './modules';
+import { exit } from 'process';
 
+export const EXITCODE_RESTART = 42;
 const TARGET_FOLDER = '.cache';
 
 const buildOptions: (root: string) => BuildOptions = (root) => ({
@@ -94,13 +96,15 @@ async function onBuild(
     file.startsWith(path.join(buildRoot, 'site/')),
   );
 
-  if (initial) {
-    const initializationFile = path.join(buildRoot, 'index.js');
-
-    if (processedFiles.includes(initializationFile)) {
+  const initializationFile = path.join(buildRoot, 'index.js');
+  if (processedFiles.includes(initializationFile)) {
+    if (initial) {
       console.log('Initializing application');
       const initFn = require(initializationFile).default;
       await initFn();
+    } else {
+      // we can not hot module replace index.ts, so we trigger a restart with a special exit code
+      exit(EXITCODE_RESTART);
     }
   }
 
