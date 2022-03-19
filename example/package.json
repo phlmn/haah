@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "An example how to use HAAH",
   "scripts": {
-    "start": "haah"
+    "start": "haah ."
   },
   "license": "AGPL-3.0-only",
   "dependencies": {
