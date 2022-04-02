@@ -1,5 +1,5 @@
-import { clearInterval } from "timers";
-import { registerCleanup } from "../modules";
+import { clearInterval } from 'timers';
+import { registerCleanup } from '../modules';
 
 export function timeSensor(
   handler: (time: Date) => void,

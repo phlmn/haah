@@ -1,18 +1,12 @@
 export async function onExit(
-  callback: (
-    options: { exit?: boolean },
-    code: number,
-  ) => void,
+  callback: (options: { exit?: boolean }, code: number) => void,
 ) {
   // from https://stackoverflow.com/a/14032965
 
   // so the program will not close instantly
   process.stdin.resume();
 
-  function exitHandler(
-    options: { exit?: boolean },
-    exitCode: number,
-  ) {
+  function exitHandler(options: { exit?: boolean }, exitCode: number) {
     callback && callback(options, exitCode);
 
     if (options.exit) process.exit();

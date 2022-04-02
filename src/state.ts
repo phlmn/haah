@@ -79,7 +79,10 @@ export function registerActuator(
   updateStateHooks.push(hook);
 
   registerCleanup(() => {
-    updateStateHooks.splice(updateStateHooks.findIndex((item) => item == hook), 1);
+    updateStateHooks.splice(
+      updateStateHooks.findIndex((item) => item == hook),
+      1,
+    );
   });
 }
 
@@ -99,7 +102,7 @@ export function state<T extends object>(
   usedKeys.push(key);
 
   registerCleanup(() => {
-    usedKeys.splice(usedKeys.findIndex(item => item === key));
+    usedKeys.splice(usedKeys.findIndex((item) => item === key));
   });
 
   const handler = {

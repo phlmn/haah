@@ -19,7 +19,7 @@ export type WeatherInfo = {
     visibility: number;
     windSpeed: number;
     windGust: number;
-    windDegree: number
+    windDegree: number;
     weather: {
       id: number;
       main: string;
@@ -55,7 +55,7 @@ export type WeatherInfo = {
     uvIndex: number;
     windSpeed: number;
     windGust: number;
-    windDegree: number
+    windDegree: number;
     precipProbability: number;
     rain: number;
     snow: number;
@@ -83,7 +83,10 @@ export function weatherSensor(
       const { current } = parsedRes;
 
       if (!parsedRes.daily) {
-        console.error("[weather_sensor] Failed to get weather info. Response:", parsedRes);
+        console.error(
+          '[weather_sensor] Failed to get weather info. Response:',
+          parsedRes,
+        );
         return;
       }
 
