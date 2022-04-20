@@ -8,14 +8,18 @@ import mime from 'mime';
 import * as io from 'socket.io';
 import * as esbuild from 'esbuild';
 
-import {
-  createAllNewPatch,
-  globalState,
-  PatchType,
-  updateStateHooks,
-} from '..';
-import { applyStatePatch } from '../state';
+import { registerActuator } from '../state';
 import React from 'react';
+import { registerCleanup } from '../modules';
+
+export async function initWebui(
+  listenIp = '0.0.0.0',
+  port = 1235,
+  siteRoot: string = `${process.cwd()}/site`,
+) {
+  const buildResult = await buildFrontend(siteRoot);
+  await startServer(listenIp, port, buildResult.outputFiles);
+}
 
 async function buildFrontend(siteRoot: string) {
   let haahEsbuildPlugin = {
@@ -86,6 +90,8 @@ async function buildFrontend(siteRoot: string) {
   });
 }
 
+let socket: io.Server | undefined;
+
 async function startServer(
   listenIp: string,
   port: number,
@@ -120,47 +126,85 @@ async function startServer(
     }
   });
 
-  const socket = new io.Server(server);
-  socket.on('connect', (connection) => {
-    connection.emit('patch_server', createAllNewPatch(globalState.inner));
-
-    let last_patch = +new Date();
-    connection.on('patch_ui', (patch: PatchType) => {
-      try {
-        last_patch = +new Date();
-        applyStatePatch(patch);
-      } catch (_e) {
-        setTimeout(() => {
-          if (+new Date() - last_patch > 500) {
-            connection.emit(
-              'patch_server',
-              createAllNewPatch(globalState.inner),
-            );
-            setTimeout(() => {
-              connection.emit('patch_outdated');
-            }, 100);
-          }
-        }, 500);
-      }
-    });
-  });
-
-  updateStateHooks.push((patch) => {
-    socket.emit('patch_server', patch);
-  });
+  socket = new io.Server(server);
 
   server.listen(port, listenIp, () => {
     console.log(`WebUi is running on http://${listenIp}:${port}`);
   });
 }
 
-export async function initWebui(
-  listenIp = '0.0.0.0',
-  port = 1235,
-  siteRoot: string = `${process.cwd()}/site`,
-) {
-  const buildResult = await buildFrontend(siteRoot);
-  await startServer(listenIp, port, buildResult.outputFiles);
+let orderCounter = 1;
+
+export function webuiActuator(id: string, fn: () => any) {
+  const order = orderCounter++;
+
+  let lastMessage: any;
+
+  const connectListener = (connection: io.Socket) => {
+    if (lastMessage) {
+      connection.emit('widget_state', lastMessage);
+    }
+  };
+
+  socket.on('connect', connectListener);
+
+  registerCleanup(() => {
+    socket.off('connect', connectListener);
+  });
+
+  registerActuator(
+    fn,
+    (props) => {
+      lastMessage = {
+        id,
+        order,
+        props,
+      };
+
+      socket.emit('widget_state', lastMessage);
+    },
+    `webui://${id}`,
+  );
 }
+
+export function webuiSensor(id: string, handler: (payload: any) => void) {
+  const listener = (payload: any) => {
+    if (payload.id == id) {
+      handler(payload);
+    }
+  };
+
+  socket.on('widget_event', listener);
+
+  registerCleanup(() => {
+    socket.off('widget_event', listener);
+  });
+}
+
+export function toggle({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: () => boolean;
+  onChange: (checked: boolean) => void;
+}): string {
+  const id = 'toggle-';
+
+  webuiSensor(id, (payload) => {
+    onChange(payload.checked);
+  });
+
+  webuiActuator(id, () => {
+    return {
+      label,
+      value: value(),
+    };
+  });
+
+  return id;
+}
+
 
 export function webuiWidget<T>(name: string, widget: React.FunctionComponent) {}
