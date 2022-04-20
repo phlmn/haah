@@ -1,15 +1,13 @@
 import { join } from 'path';
 import http, { ServerResponse } from 'http';
-import glob from 'glob';
 import fs from 'fs';
-import { readFile } from 'fs/promises';
 import mime from 'mime';
+import { nanoid } from 'nanoid';
 
 import * as io from 'socket.io';
 import * as esbuild from 'esbuild';
 
 import { registerActuator } from '../state';
-import React from 'react';
 import { registerCleanup } from '../modules';
 
 export async function initWebui(
@@ -22,66 +20,8 @@ export async function initWebui(
 }
 
 async function buildFrontend(siteRoot: string) {
-  let haahEsbuildPlugin = {
-    name: 'haah',
-    setup(build: any) {
-      build.onResolve({ filter: /^site_root$/ }, (args: any) => {
-        return { path: 'site_root', namespace: 'site_root' };
-      });
-      build.onLoad(
-        { filter: /^site_root$/, namespace: 'site_root' },
-        async (_: any) => {
-          let imports = glob
-            .sync(`${siteRoot}/**/*.tsx`)
-            .map((f) => `import '${f}';\n`)
-            .join('');
-          return {
-            contents: imports,
-            loader: 'ts',
-            resolveDir: '/',
-          };
-        },
-      );
-
-      build.onResolve({ filter: /^fs(\/promises)?$/ }, (args: any) => {
-        return { path: 'fs', namespace: 'shims' };
-      });
-      build.onLoad({ filter: /^fs$/, namespace: 'shims' }, async (_: any) => {
-        return {
-          contents: await readFile(
-            join(__dirname, '../../src/webui/shims/fs.js'),
-          ),
-          loader: 'js',
-        };
-      });
-
-      build.onResolve({ filter: /^path$/ }, (args: any) => {
-        return { path: 'path', namespace: 'shims' };
-      });
-      build.onLoad({ filter: /^path$/, namespace: 'shims' }, async (_: any) => {
-        return {
-          contents: await readFile(
-            join(__dirname, '../../src/webui/shims/path.js'),
-          ),
-          loader: 'js',
-        };
-      });
-
-      build.onResolve({ filter: /^haah$/ }, (args: any) => {
-        return { path: join(__dirname, '../../src/webui/haah_frontend.tsx') };
-      });
-      build.onResolve({ filter: /^react$/ }, (args: any) => {
-        // we have to rewrite all react instances to our own
-        // otherwise we have two distinct react instances because of hygienic js modules
-        // this for example breaks hooks
-        return { path: join(__dirname, '../../node_modules/react/index.js') };
-      });
-    },
-  };
-
   return await esbuild.build({
     entryPoints: [join(__dirname, '../../src/webui/www/index.tsx')],
-    plugins: [haahEsbuildPlugin],
     sourcemap: true,
     outdir: '/',
     bundle: true,
@@ -142,14 +82,15 @@ export function webuiActuator(id: string, fn: () => any) {
 
   const connectListener = (connection: io.Socket) => {
     if (lastMessage) {
+      console.log("Connected", connection)
       connection.emit('widget_state', lastMessage);
     }
   };
 
-  socket.on('connect', connectListener);
+  socket.on('connection', connectListener);
 
   registerCleanup(() => {
-    socket.off('connect', connectListener);
+    socket.off('connection', connectListener);
   });
 
   registerActuator(
@@ -159,6 +100,7 @@ export function webuiActuator(id: string, fn: () => any) {
         id,
         order,
         props,
+        root: true,
       };
 
       socket.emit('widget_state', lastMessage);
@@ -190,7 +132,7 @@ export function toggle({
   value: () => boolean;
   onChange: (checked: boolean) => void;
 }): string {
-  const id = 'toggle-';
+  const id = `toggle-${nanoid()}`;
 
   webuiSensor(id, (payload) => {
     onChange(payload.checked);
@@ -206,5 +148,22 @@ export function toggle({
   return id;
 }
 
+export function webuiCard({
+  label,
+  children,
+}: {
+  label: string;
+  children: Array<string>;
+}) {
+  const id = `card-${nanoid()}`;
+
+  webuiActuator(id, () => {
+    return {
+      label,
+    };
+  });
+
+  return id;
+}
 
 export function webuiWidget<T>(name: string, widget: React.FunctionComponent) {}

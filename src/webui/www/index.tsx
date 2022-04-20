@@ -25,7 +25,7 @@ const App = () => {
     });
 
     socket.on('disconnect', (reason) => console.log('disconnect', reason));
-    socket.on('connect', () => console.log('connect'));
+    socket.on('connection', () => console.log('connect'));
   }, []);
 
   return (
@@ -44,7 +44,9 @@ const App = () => {
           {Object.values(widgetState)
             .filter((w) => w.root)
             .sort((a, b) => a.order - b.order)
-            .map((w) => <Widget state={w} />)}
+            .map((w) => (
+              <Widget state={w} />
+            ))}
         </Row>
       </Content>
     </Layout>
@@ -56,7 +58,7 @@ function Widget({ state }: { state: any }) {
     <Col xs={24} md={12} lg={8} xl={6}>
       {JSON.stringify(state)}
       {/* <Card title={k}> */}
-        {/* <Element /> */}
+      {/* <Element /> */}
       {/* </Card> */}
     </Col>
   );
