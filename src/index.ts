@@ -1,6 +1,7 @@
 export * from './state';
 export * from './io';
 export * from './webui';
+export * as widgets from './webui/widgets';
 
 import { enablePatches } from 'immer';
 

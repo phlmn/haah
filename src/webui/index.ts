@@ -1,8 +1,7 @@
-import { join } from 'path';
+import { join, relative } from 'path';
 import http, { ServerResponse } from 'http';
 import fs from 'fs';
 import mime from 'mime';
-import { nanoid } from 'nanoid';
 
 import * as io from 'socket.io';
 import * as esbuild from 'esbuild';
@@ -21,7 +20,17 @@ export async function initWebui(
 
 async function buildFrontend(siteRoot: string) {
   return await esbuild.build({
-    entryPoints: [join(__dirname, '../../src/webui/www/index.tsx')],
+    stdin: {
+      resolveDir: join(__dirname, '../../src/webui/www/'),
+      contents: [
+        ...Object.values(widgetFiles),
+        join(__dirname, '../../src/webui/www/index.tsx'),
+      ]
+        .map((file) => relative(join(__dirname, '../../src/webui/www/'), file))
+        .map((file) => `import "./${file}";`)
+        .join('\n'),
+    },
+    outbase: join(__dirname, '../../src/webui/www/'),
     sourcemap: true,
     outdir: '/',
     bundle: true,
@@ -51,6 +60,7 @@ async function startServer(
       if (req.url == '/') {
         req.url = '/index.html';
       }
+
       fs.readFile(
         join(__dirname, '../../src/webui/www', req.url),
         function (err, data) {
@@ -75,14 +85,13 @@ async function startServer(
 
 let orderCounter = 1;
 
-export function webuiActuator(id: string, fn: () => any) {
+export function webuiActuator(type: string, id: string, fn: () => any) {
   const order = orderCounter++;
 
   let lastMessage: any;
 
   const connectListener = (connection: io.Socket) => {
     if (lastMessage) {
-      console.log("Connected", connection)
       connection.emit('widget_state', lastMessage);
     }
   };
@@ -98,6 +107,7 @@ export function webuiActuator(id: string, fn: () => any) {
     (props) => {
       lastMessage = {
         id,
+        type,
         order,
         props,
         root: true,
@@ -110,60 +120,25 @@ export function webuiActuator(id: string, fn: () => any) {
 }
 
 export function webuiSensor(id: string, handler: (payload: any) => void) {
-  const listener = (payload: any) => {
-    if (payload.id == id) {
-      handler(payload);
-    }
+  const listener = (s: io.Socket) => {
+    s.on('widget_event', (payload: any) => {
+      console.log('listener', payload);
+      if (payload.id == id) {
+        handler(payload);
+      }
+    });
   };
 
-  socket.on('widget_event', listener);
+  socket.on('connection', listener);
 
   registerCleanup(() => {
-    socket.off('widget_event', listener);
+    socket.off('connection', listener);
   });
-}
-
-export function toggle({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: () => boolean;
-  onChange: (checked: boolean) => void;
-}): string {
-  const id = `toggle-${nanoid()}`;
-
-  webuiSensor(id, (payload) => {
-    onChange(payload.checked);
-  });
-
-  webuiActuator(id, () => {
-    return {
-      label,
-      value: value(),
-    };
-  });
-
-  return id;
-}
-
-export function webuiCard({
-  label,
-  children,
-}: {
-  label: string;
-  children: Array<string>;
-}) {
-  const id = `card-${nanoid()}`;
-
-  webuiActuator(id, () => {
-    return {
-      label,
-    };
-  });
-
-  return id;
 }
 
 export function webuiWidget<T>(name: string, widget: React.FunctionComponent) {}
+
+const widgetFiles: Record<string, string> = {};
+export function registerWidgetRenderer(type: string, filename: string) {
+  widgetFiles[type] = filename;
+}
