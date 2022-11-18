@@ -9,7 +9,7 @@
   "dependencies": {
     "@types/node": "^16.0.0",
     "@types/react": "^17.0.5",
-    "antd": "^4.15.4",
+    "antd": "^5.0.0",
     "date-fns": "^2.25.0",
     "haah": "file:..",
     "react": "^17.0.2",
