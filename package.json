@@ -22,7 +22,7 @@
     "graphology": "^0.25.0",
     "graphology-graphml": "^0.5.1",
     "graphology-traversal": "^0.3.0",
-    "immer": "^9.0.6",
+    "immer": "^10.0.0",
     "isomorphic-fetch": "^3.0.0",
     "mime": "^3.0.0",
     "react": "^17.0.2",
