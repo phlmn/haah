@@ -13,7 +13,7 @@
     "haah": "./cli-restart-wrapper.js"
   },
   "dependencies": {
-    "antd": "^4.15.4",
+    "antd": "^5.0.0",
     "async-mqtt": "^2.6.1",
     "chokidar": "^3.5.3",
     "commander": "^9.1.0",
