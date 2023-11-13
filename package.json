@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@types/glob": "^8.0.0",
-    "@types/isomorphic-fetch": "0.0.36",
+    "@types/isomorphic-fetch": "0.0.39",
     "@types/mime": "^3.0.0",
     "@types/node": "^16.4.3",
     "@types/react": "^17.0.5",
