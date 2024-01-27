@@ -17,7 +17,7 @@
     "async-mqtt": "^2.6.1",
     "chokidar": "^3.5.3",
     "commander": "^9.1.0",
-    "esbuild": "^0.15.0",
+    "esbuild": "^0.20.0",
     "fast-glob": "^3.2.11",
     "graphology": "^0.25.0",
     "graphology-graphml": "^0.5.1",
