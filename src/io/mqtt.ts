@@ -2,9 +2,22 @@ import MQTT, { IClientOptions } from 'async-mqtt';
 import { registerActuator } from '..';
 import { registerCleanup } from '../modules';
 
+export type MqttOptions = {
+  clientOpts?: IClientOptions;
+  readonly?: boolean;
+};
+
+let readonly = false;
+
 export let mqttClient: MQTT.AsyncClient = null;
-export async function initMqtt(brokerUri: string, opts: IClientOptions = {}) {
-  mqttClient = await MQTT.connectAsync(brokerUri, opts);
+export async function initMqtt(brokerUri: string, opts: MqttOptions = {}) {
+  if (opts.readonly) {
+    readonly = true;
+    console.log(`[mqtt] ${brokerUri} in readonly mode`);
+  }
+
+  mqttClient = await MQTT.connectAsync(brokerUri, opts.clientOpts);
+  mqttClient.setMaxListeners(100000);
 }
 
 export function mqttActuator(topic: string, fn: () => any) {
@@ -15,6 +28,9 @@ export function mqttActuator(topic: string, fn: () => any) {
   registerActuator(
     fn,
     async (result: any) => {
+      if (readonly) {
+        return;
+      }
       await mqttClient.publish(topic, JSON.stringify(result));
     },
     `mqtt://${topic}`,
