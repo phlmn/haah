@@ -9,7 +9,14 @@ export async function onExit(
   function exitHandler(options: { exit?: boolean }, exitCode: number) {
     callback && callback(options, exitCode);
 
-    if (options.exit) process.exit();
+    if (options.exit) process.exit(exitCode);
+  }
+
+  function exceptionHandler(error: any) {
+    console.error('Unhandled exception:', error);
+    callback && callback({ exit: true }, 1);
+
+    process.exit(1);
   }
 
   // do something when app is closing
@@ -23,5 +30,5 @@ export async function onExit(
   process.on('SIGUSR2', exitHandler.bind(null, { exit: true }));
 
   // catches uncaught exceptions
-  process.on('uncaughtException', exitHandler.bind(null, { exit: true }));
+  process.on('uncaughtException', exceptionHandler);
 }
