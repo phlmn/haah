@@ -23,7 +23,11 @@ export async function run(root: string = process.cwd()) {
   // try to load state from file, fall back to default state
   try {
     globalState.inner = await readState();
-  } catch {
+  } catch (e) {
+    console.log(e);
+    console.error(
+      'WARNING: Failed to load state! Starting with default state.',
+    );
     globalState.inner = {};
   }
 
