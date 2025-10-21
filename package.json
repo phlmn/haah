@@ -36,7 +36,7 @@
     "@types/glob": "^8.0.0",
     "@types/isomorphic-fetch": "0.0.36",
     "@types/mime": "^3.0.0",
-    "@types/node": "^16.18.126",
+    "@types/node": "^22.0.0",
     "@types/react": "^17.0.5",
     "@types/react-dom": "^17.0.5",
     "@types/socket.io": "^3.0.2",
