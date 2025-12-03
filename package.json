@@ -21,7 +21,7 @@
     "commander": "^9.1.0",
     "esbuild": "^0.15.0",
     "fast-glob": "^3.2.11",
-    "graphology": "^0.25.0",
+    "graphology": "^0.26.0",
     "graphology-graphml": "^0.5.1",
     "graphology-traversal": "^0.3.0",
     "immer": "^9.0.6",
